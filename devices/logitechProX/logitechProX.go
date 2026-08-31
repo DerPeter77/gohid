@@ -1,5 +1,22 @@
 package logitechprox
 
+import (
+	"github.com/DerPeter77/gohid/internal/linux"
+)
+
+// Sends a request for logitech pro x to respond with the battery status.
+func RequestBatteryStatus(devPath string) error {
+	request := []byte{
+		0x11, 0xFF, 0x06, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	}
+
+	if err := linux.WriteHidFile(devPath, request); err != nil {
+		return err
+	}
+	return nil
+}
+
 // ParseBattery versucht, aus einem HID++ 2.0 Byte-Array die Spannung und % zu extrahieren
 func ParseBattery(data []byte) (mv uint16, percent int, ok bool) {
 	// Prüfen, ob es ein validier HID++ 2.0 Long Report (20 Bytes) ist
