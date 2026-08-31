@@ -1,42 +1,47 @@
 package main
 
 import (
-	"encoding/hex"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/DerPeter77/go-hid/internal/linux"
 )
 
 func main() {
-	fmt.Println("Example")
+	fmt.Printf("Example loaded!\n\n")
+
+	devices_list, err := linux.GetAllUsbDevices()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("USB Geräteliste:")
+	for _, device := range devices_list {
+		fmt.Printf("Gerät: %v Pfad: %v\n", device.Name, device.Path)
+	}
 
 	devPath := "/dev/hidraw5"
-	fmt.Printf("Starte Live-Stream für %s (Beenden mit Strg+C)...\n\n", devPath)
+	readChan := make(chan []byte, 1)
 
-	err := linux.StreamRawData(devPath, func(data []byte) {
-		timestamp := time.Now().Format("15:04:05.000")
+	// 1. Reader im Hintergrund starten (weil Read ewig blockiert)
+	go linux.ReadHidFile(devPath, readChan)
 
-		// Hex-String formatieren
-		hexDump := hex.EncodeToString(data)
-		var formattedHex string
-		for i := 0; i < len(hexDump); i += 2 {
-			formattedHex += hexDump[i:i+2] + " "
-		}
+	// 3. Batterie-Abfrage direkt und einfach abfeuern!
+	request := []byte{
+		0x11, 0xFF, 0x06, 0x09, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+	}
 
-		// Basis-Ausgabe der Hex-Daten
-		output := fmt.Sprintf("[%s] %2d Bytes | %s", timestamp, len(data), formattedHex)
+	fmt.Println("Sende Batterie-Anfrage...")
+	if err := linux.WriteHidFile(devPath, request); err != nil {
+		log.Fatalf("Fehler beim Senden: %v", err)
+	}
 
-		// Automatische Batterie-Erkennung & Berechnung
+	for data := range readChan {
 		if mv, percent, ok := linux.ParseBattery(data); ok {
-			output += fmt.Sprintf("  <-- [BATTERIE: %d mV | ca. %d%%]", mv, percent)
+			fmt.Printf("Akkustand empfangen: %d mV (%d%%)\n", mv, percent)
+			close(readChan)
 		}
-
-		fmt.Println(output)
-	})
-
-	if err != nil {
-		log.Fatalf("Fehler: %v", err)
 	}
 }

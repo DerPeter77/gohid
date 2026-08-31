@@ -1,94 +1,51 @@
-//go:build linux
-
 package linux
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 )
 
-type RawDeviceInfo struct {
-	Path string
-	Name string
-}
-
-// EnumerateSysfs scans /sys/class/hidraw/ for all USB Devices
-func EnumerateSysfs() ([]RawDeviceInfo, error) {
-	var devices []RawDeviceInfo
-
-	entries, err := os.ReadDir("/sys/class/hidraw")
+// ReadHidFile reads the HID File from hidpath and sends all of the data to the given channel.
+// Max Buffer for reading the file is at [64]byte
+func ReadHidFile(hidpath string, ch chan<- []byte) error {
+	file, err := os.OpenFile(hidpath, os.O_RDONLY, 0666)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return devices, nil
-		}
-		return nil, fmt.Errorf("fehler beim Lesen von sysfs: %w", err)
-	}
-
-	for _, entry := range entries {
-		name := entry.Name()
-		ueventPath := filepath.Join("/sys/class/hidraw", name, "device", "uevent")
-
-		info := RawDeviceInfo{
-			Path: filepath.Join("/dev", name),
-			Name: "Unbekanntes Gerät",
-		}
-
-		if devName, err := parseUeventName(ueventPath); err == nil && devName != "" {
-			info.Name = devName
-		}
-
-		devices = append(devices, info)
-	}
-
-	return devices, nil
-}
-
-func parseUeventName(path string) (string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return "", err
+		return err
 	}
 	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if strings.HasPrefix(line, "HID_NAME=") {
-			parts := strings.SplitN(line, "=", 2)
-			if len(parts) == 2 {
-				return strings.TrimSpace(parts[1]), nil
-			}
-		}
-	}
-
-	return "", scanner.Err()
-}
-
-// StreamRawData reads the file and calls the handler
-func StreamRawData(devPath string, handler func([]byte)) error {
-	file, err := os.OpenFile(devPath, os.O_RDWR, 0666)
-	if err != nil {
-		return fmt.Errorf("konnte %s nicht öffnen (Rechte geprüft? sudo?): %w", devPath, err)
-	}
-	defer file.Close()
-
-	buf := make([]byte, 64)
 
 	for {
+		buf := make([]byte, 64)
 		n, err := file.Read(buf)
 		if err != nil {
-			return fmt.Errorf("lesefehler: %w", err)
+			close(ch)
+			return err
 		}
 
 		data := make([]byte, n)
 		copy(data, buf[:n])
 
-		handler(data)
+		ch <- data
 	}
+}
+
+func WriteHidFile(hidpath string, data []byte) error {
+	file, err := os.OpenFile(hidpath, os.O_WRONLY, 0666)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	n, err := file.Write(data)
+	if err != nil {
+		return err
+	}
+
+	if n < len(data) {
+		return fmt.Errorf("Only wrote %d from %d Bytes", n, len(data))
+	}
+
+	return nil
 }
 
 // ParseBattery versucht, aus einem HID++ 2.0 Byte-Array die Spannung und % zu extrahieren
