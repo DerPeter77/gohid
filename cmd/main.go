@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/DerPeter77/go-hid/internal/linux"
+	"github.com/DerPeter77/gohid/internal/linux"
 )
 
 func main() {
