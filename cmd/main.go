@@ -3,21 +3,29 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
+	logitechprox "github.com/DerPeter77/gohid/devices/logitechProX"
 	"github.com/DerPeter77/gohid/internal/linux"
 )
 
 func main() {
-	fmt.Printf("Example loaded!\n\n")
+	if len(os.Args) > 1 {
+		args := os.Args[1]
 
-	devices_list, err := linux.GetAllUsbDevices()
-	if err != nil {
-		log.Fatal(err)
-	}
+		switch args {
+		case "list":
+			devices_list, err := linux.GetAllUsbDevices()
+			if err != nil {
+				log.Fatal(err)
+			}
 
-	fmt.Println("USB Geräteliste:")
-	for _, device := range devices_list {
-		fmt.Printf("Gerät: %v Pfad: %v\n", device.Name, device.Path)
+			fmt.Print("USB Devicelist:\n\n")
+			for _, device := range devices_list {
+				fmt.Printf("Gerät: \"%v\" Pfad: \"%v\"\n", device.Name, device.Path)
+			}
+			return
+		}
 	}
 
 	devPath := "/dev/hidraw5"
@@ -39,7 +47,7 @@ func main() {
 	}
 
 	for data := range readChan {
-		if mv, percent, ok := linux.ParseBattery(data); ok {
+		if mv, percent, ok := logitechprox.ParseBattery(data); ok {
 			fmt.Printf("Akkustand empfangen: %d mV (%d%%)\n", mv, percent)
 			close(readChan)
 		}
