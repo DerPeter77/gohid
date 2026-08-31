@@ -9,7 +9,12 @@ import (
 )
 
 func main() {
-	fmt.Println("Example")
+	exampleHeadsetBattery()
+
+}
+
+func exampleHeadsetBattery() {
+	fmt.Println("Example Headset Battery")
 
 	ch, err := linux.ReadHidFile("/dev/hidraw5")
 	if err != nil {
