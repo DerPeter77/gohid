@@ -21,10 +21,10 @@ func (device Device) GetDevicePath() string {
 	return device.path
 }
 
-// ReadHidFile reads the HID File from hidpath and sends all of the data to the given channel.
+// Read reads the HID File from hidpath and sends all of the data to the given channel.
 // Max Buffer for reading the file is at [64]byte.
 // Returns error or nil if successfull.
-func (device Device) ReadHidFile() (<-chan []byte, error) {
+func (device Device) Read() (<-chan []byte, error) {
 	file, err := os.OpenFile(device.path, os.O_RDWR, 0666)
 	if err != nil {
 		return nil, err
@@ -52,9 +52,9 @@ func (device Device) ReadHidFile() (<-chan []byte, error) {
 	return ch, nil
 }
 
-// WriteHidFile writes data to the file at hidpath.
+// Write writes data to the file at hidpath.
 // Returns error or nil if successfull.
-func (device Device) WriteHidFile(data []byte) error {
+func (device Device) Write(data []byte) error {
 	file, err := os.OpenFile(device.path, os.O_WRONLY, 0666)
 	if err != nil {
 		return err
