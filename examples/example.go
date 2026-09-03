@@ -5,7 +5,7 @@ import (
 	"log"
 
 	logitechprox "github.com/DerPeter77/gohid/devices/logitechProX"
-	"github.com/DerPeter77/gohid/internal/linux"
+	"github.com/DerPeter77/gohid/internal"
 )
 
 func main() {
@@ -16,7 +16,9 @@ func main() {
 func exampleHeadsetBattery() {
 	fmt.Println("Example Headset Battery")
 
-	ch, err := linux.ReadHidFile("/dev/hidraw5")
+	device := internal.NewDevice("/dev/hidraw5")
+
+	ch, err := device.Read()
 	if err != nil {
 		log.Fatal(err)
 	}

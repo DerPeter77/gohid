@@ -1,17 +1,19 @@
 package logitechprox
 
 import (
-	"github.com/DerPeter77/gohid/internal/linux"
+	"github.com/DerPeter77/gohid/internal"
 )
 
 // Sends a request for logitech pro x to respond with the battery status.
 func RequestBatteryStatus(devPath string) error {
+	device := internal.NewDevice(devPath)
+
 	request := []byte{
 		0x11, 0xFF, 0x06, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	}
 
-	if err := linux.WriteHidFile(devPath, request); err != nil {
+	if err := device.Write(request); err != nil {
 		return err
 	}
 	return nil

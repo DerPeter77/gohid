@@ -6,13 +6,15 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/DerPeter77/gohid/internal/linux"
+	"github.com/DerPeter77/gohid/internal"
 )
 
 func exampleKeyBoardInputs() {
 	fmt.Println("Example Keyboard Inputs")
 
-	ch, err := linux.ReadHidFile("/dev/input/event5")
+	device := internal.NewDevice("/dev/input/event5")
+
+	ch, err := device.Read()
 	if err != nil {
 		log.Fatal(err)
 	}

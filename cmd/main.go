@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/DerPeter77/gohid/internal/linux"
+	"github.com/DerPeter77/gohid/internal"
 )
 
 func main() {
@@ -14,7 +14,7 @@ func main() {
 
 		switch args {
 		case "list":
-			devices_list, err := linux.GetAllUsbDevices()
+			devices_list, err := internal.GetAllUsbDevices()
 			if err != nil {
 				log.Fatal(err)
 			}
