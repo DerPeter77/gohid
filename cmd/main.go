@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/DerPeter77/gohid"
 )
@@ -36,6 +37,47 @@ func main() {
 
 				for data := range ch {
 					fmt.Printf("%#+v\n", data)
+				}
+			}
+		case "devices":
+			if len(os.Args) > 2 {
+				deviceName := os.Args[2]
+
+				// Get the devices list and check if the Name is in there
+				devices_list, err := gohid.GetAllUsbDevices()
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				for _, device := range devices_list {
+					if strings.Contains(device.Name, deviceName) {
+
+						go func(devPath string, devName string) {
+							log.Default().Printf("Using Device Path: %v for Device Name: %v", devPath, devName)
+
+							dev := gohid.NewDevice(devPath)
+							ch, err := dev.Read()
+							if err != nil {
+								log.Fatal(err)
+							}
+
+							g6Press := []byte{0x11, 0xff, 0x8, 0x0, 0x20, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}
+							g7Press := []byte{0x11, 0xff, 0x8, 0x0, 0x40, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}
+
+							for data := range ch {
+								fmt.Printf("DEBUG: %#+v\n", data)
+								switch string(data) {
+								case string(g6Press):
+									fmt.Println("Pressed G6")
+								case string(g7Press):
+									fmt.Println("Pressed G7")
+								}
+							}
+						}(device.Path, device.Name)
+					}
+				}
+
+				for {
 				}
 			}
 		}
