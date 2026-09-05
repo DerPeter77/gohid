@@ -24,6 +24,20 @@ func main() {
 				fmt.Printf("Gerät: \"%v\" Pfad: \"%v\"\n", device.Name, device.Path)
 			}
 			return
+		case "read":
+			if len(os.Args) > 2 {
+				path := os.Args[2]
+
+				device := gohid.NewDevice(path)
+				ch, err := device.Read()
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				for data := range ch {
+					fmt.Printf("%#+v\n", data)
+				}
+			}
 		}
 	}
 }
