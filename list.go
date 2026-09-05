@@ -1,4 +1,4 @@
-package internal
+package gohid
 
 import (
 	"bufio"
@@ -13,7 +13,7 @@ type RawDeviceInfo struct {
 	Name string
 }
 
-// GetAllUsbDevices scans /sys/class/hidraw/ for all USB Devices
+// GetAllUsbDevices scans /sys/class/hidraw/ for all USB Devices and returns them
 func GetAllUsbDevices() ([]RawDeviceInfo, error) {
 	var devices []RawDeviceInfo
 
@@ -22,7 +22,7 @@ func GetAllUsbDevices() ([]RawDeviceInfo, error) {
 		if os.IsNotExist(err) {
 			return devices, nil
 		}
-		return nil, fmt.Errorf("fehler beim Lesen von sysfs: %w", err)
+		return nil, fmt.Errorf("Error while reading sysfs: %w", err)
 	}
 
 	for _, entry := range entries {
@@ -31,7 +31,7 @@ func GetAllUsbDevices() ([]RawDeviceInfo, error) {
 
 		info := RawDeviceInfo{
 			Path: filepath.Join("/dev", name),
-			Name: "Unbekanntes Gerät",
+			Name: "Unknown Device",
 		}
 
 		if devName, err := parseUeventName(ueventPath); err == nil && devName != "" {

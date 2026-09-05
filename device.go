@@ -1,4 +1,4 @@
-package internal
+package gohid
 
 import (
 	"fmt"
@@ -21,9 +21,6 @@ func (device Device) GetDevicePath() string {
 	return device.path
 }
 
-// Read reads the HID File from hidpath and sends all of the data to the given channel.
-// Max Buffer for reading the file is at [64]byte.
-// Returns error or nil if successfull.
 func (device Device) Read() (<-chan []byte, error) {
 	file, err := os.OpenFile(device.path, os.O_RDWR, 0666)
 	if err != nil {
