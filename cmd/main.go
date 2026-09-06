@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/DerPeter77/gohid"
+	"github.com/DerPeter77/gohid/devices"
 )
 
 func main() {
@@ -40,45 +41,48 @@ func main() {
 				}
 			}
 		case "devices":
-			if len(os.Args) > 2 {
-				deviceName := os.Args[2]
+			if len(os.Args) < 3 {
+				fmt.Println("Usage: gohid devices <device-name> <command>")
+				fmt.Println("Available device handlers:")
+				for _, handler := range devices.ListHandlers() {
+					fmt.Printf("  %s - commands: %v\n", handler.Name(), handler.Commands())
+				}
+				return
+			}
 
-				// Get the devices list and check if the Name is in there
-				devices_list, err := gohid.GetAllUsbDevices()
-				if err != nil {
+			deviceName := os.Args[2]
+			handler := devices.GetHandler(deviceName)
+			if handler == nil {
+				fmt.Printf("No handler for device: %s\n", deviceName)
+				return
+			}
+
+			devicesList, err := gohid.GetAllUsbDevices()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			var devicePath string
+			for _, d := range devicesList {
+				if strings.Contains(d.Name, deviceName) || handler.Match(d.Name) {
+					devicePath = d.Path
+					break
+				}
+			}
+
+			if devicePath == "" {
+				fmt.Printf("Device not found: %s\n", deviceName)
+				return
+			}
+
+			device := gohid.NewDevice(devicePath)
+
+			if len(os.Args) > 3 {
+				if err := handler.Handle(&device, os.Args[3:]); err != nil {
 					log.Fatal(err)
 				}
-
-				for _, device := range devices_list {
-					if strings.Contains(device.Name, deviceName) {
-
-						go func(devPath string, devName string) {
-							log.Default().Printf("Using Device Path: %v for Device Name: %v", devPath, devName)
-
-							dev := gohid.NewDevice(devPath)
-							ch, err := dev.Read()
-							if err != nil {
-								log.Fatal(err)
-							}
-
-							g6Press := []byte{0x11, 0xff, 0x8, 0x0, 0x20, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}
-							g7Press := []byte{0x11, 0xff, 0x8, 0x0, 0x40, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}
-
-							for data := range ch {
-								fmt.Printf("DEBUG: %#+v\n", data)
-								switch string(data) {
-								case string(g6Press):
-									fmt.Println("Pressed G6")
-								case string(g7Press):
-									fmt.Println("Pressed G7")
-								}
-							}
-						}(device.Path, device.Name)
-					}
-				}
-
-				for {
-				}
+			} else {
+				fmt.Printf("Available commands for %s: %v\n", handler.Name(), handler.Commands())
 			}
 		}
 	}
