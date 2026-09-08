@@ -50,6 +50,9 @@ func main() {
 				return
 			}
 
+			subArgsBegin := 3
+			var devicePath string
+
 			deviceName := os.Args[2]
 			handler := devices.GetHandler(deviceName)
 			if handler == nil {
@@ -57,28 +60,33 @@ func main() {
 				return
 			}
 
-			devicesList, err := gohid.GetAllUsbDevices()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			var devicePath string
-			for _, d := range devicesList {
-				if strings.Contains(d.Name, deviceName) || handler.Match(d.Name) {
-					devicePath = d.Path
-					break
+			_, err := os.Stat(os.Args[3])
+			if err == nil {
+				subArgsBegin += 1
+				devicePath = os.Args[3]
+			} else {
+				devicesList, err := gohid.GetAllUsbDevices()
+				if err != nil {
+					log.Fatal(err)
 				}
-			}
 
-			if devicePath == "" {
-				fmt.Printf("Device not found: %s\n", deviceName)
-				return
+				for _, d := range devicesList {
+					if strings.Contains(d.Name, deviceName) || handler.Match(d.Name) {
+						devicePath = d.Path
+						break
+					}
+				}
+
+				if devicePath == "" {
+					fmt.Printf("Device not found: %s\n", deviceName)
+					return
+				}
 			}
 
 			device := gohid.NewDevice(devicePath)
 
 			if len(os.Args) > 3 {
-				if err := handler.Handle(&device, os.Args[3:]); err != nil {
+				if err := handler.Handle(&device, os.Args[subArgsBegin:]); err != nil {
 					log.Fatal(err)
 				}
 			} else {
