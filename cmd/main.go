@@ -23,7 +23,18 @@ func main() {
 
 			fmt.Print("USB Devicelist:\n\n")
 			for _, device := range devices_list {
-				fmt.Printf("Gerät: \"%v\" Pfad: \"%v\"\n", device.Name, device.Path)
+				fmt.Printf("Gerät: \"%v\"\n", device.Name)
+				fmt.Printf("  Pfad:    \"%v\"\n", device.Path)
+				if device.Phys != "" {
+					fmt.Printf("  Phys:    \"%v\"\n", device.Phys)
+				}
+				if device.Uniq != "" {
+					fmt.Printf("  Uniq:    \"%v\"\n", device.Uniq)
+				}
+				if device.Modalias != "" {
+					fmt.Printf("  Modalias:\"%v\"\n", device.Modalias)
+				}
+				fmt.Println()
 			}
 			return
 		case "read":

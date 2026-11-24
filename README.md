@@ -25,8 +25,23 @@ Beispielausgabe:
 ```text
 USB Devicelist:
 
-Gerät: "Logitech Gaming Keyboard G910" Pfad: "/dev/hidraw0"
-Gerät: "Logitech PRO X Wireless Gaming Headset" Pfad: "/dev/hidraw1"
+Gerät: "Logitech Gaming Keyboard G910"
+  Pfad:    "/dev/hidraw0"
+  Phys:    "usb-0000:00:14.0-2/input0"
+  Uniq:    ""
+  Modalias:"hid:b0003g0001v0000046dp0000c073"
+
+Gerät: "Logitech Gaming Keyboard G910"
+  Pfad:    "/dev/hidraw1"
+  Phys:    "usb-0000:00:14.0-2/input1"
+  Uniq:    ""
+  Modalias:"hid:b0003g0001v0000046dp0000c073"
+
+Gerät: "Logitech PRO X Wireless Gaming Headset"
+  Pfad:    "/dev/hidraw2"
+  Phys:    "usb-0000:00:14.0-3/input0"
+  Uniq:    "00:11:22:33:44:55"
+  Modalias:"hid:b0003g0001v0000046dp0000c073"
 ```
 
 ### `read <pfad>`
@@ -79,6 +94,19 @@ gohid devices "Logitech PRO X Wireless Gaming Headset" /dev/hidraw1 battery
 # Verfügbare Befehle für einen Handler anzeigen
 gohid devices "Logitech Gaming Keyboard G910"
 ```
+
+### Unterschiedliche Interfaces desselben Geräts erkennen
+
+Ein physisches HID-Gerät (z. B. eine Logitech-Tastatur) legt oft mehrere `/dev/hidraw*` Interfaces an – eines für normale Tasten, eines für die Logitech-G-Tasten und eines für Maussensor-Eingaben. Alle Interfaces tragen denselben Gerätenamen (`HID_NAME`), unterscheiden sich aber in:
+
+| Feld | Bedeutung |
+|------|-----------|
+| `Pfad` | Der Gerätepfad unter `/dev/hidraw*` (einzigartig pro Interface) |
+| `Phys` | Die physische USB-Position (identisch für alle Interfaces desselben Geräts) |
+| `Uniq` | Eindeutige Geräte-ID / Seriennummer (identisch für alle Interfaces desselben Geräts) |
+| `Modalias` | HID-Modul-Alias (identisch für alle Interfaces desselben Geräts) |
+
+**Beispiel:** Zwei Einträge mit demselben Namen `"Logitech Gaming Keyboard G910"` und demselben `Phys`-Wert, aber unterschiedlichen Pfaden (`/dev/hidraw0` und `/dev/hidraw1`), sind zwei Interfaces desselben physischen Tastatur-Geräts. Über `Phys` oder `Uniq` lässt sich zuordnen, welcher Pfad zu welchem Gerät gehört.
 
 ## Bibliothek nutzen
 
